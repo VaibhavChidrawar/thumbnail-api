@@ -1,6 +1,5 @@
 # Python
-app/__pycache__
-app/routers/__pycache__
+__pycache__/
 dist/
 build/
 

@@ -3,6 +3,8 @@ import os
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from redis import Redis
 from rq import Queue
+from fastapi.responses import FileResponse
+from app.config import THUMBNAILS_DIR
 
 from app.config import ORIGINALS_DIR, REDIS_URL
 
@@ -61,3 +63,28 @@ def list_jobs():
         result.append({"job_id": job_id, "status": status})
 
     return result
+
+@router.get("/{job_id}/thumbnail")
+def get_thumbnail(job_id: str):
+    job_key = f"job:{job_id}"
+
+    if not redis_conn.exists(job_key):
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    status = redis_conn.hget(job_key, "status").decode()
+    if status != "succeeded":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Thumbnail not available. Job status: {status}"
+        )
+
+    thumbnail_path = f"{THUMBNAILS_DIR}/{job_id}.png"
+
+    if not os.path.exists(thumbnail_path):
+        raise HTTPException(status_code=500, detail="Thumbnail file missing")
+
+    return FileResponse(
+        thumbnail_path,
+        media_type="image/png",
+        filename=f"{job_id}.png"
+    )
