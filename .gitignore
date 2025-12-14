@@ -1,0 +1,15 @@
+# Python
+app/__pycache__
+app/routers/__pycache__
+dist/
+build/
+
+# Editor
+.vscode/
+
+# Logs
+*.log
+
+# Virtual environment
+venv/
+.env
