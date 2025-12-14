@@ -13,3 +13,12 @@ build/
 # Virtual environment
 venv/
 .env
+
+# Local storage (generated files)
+app/storage/originals/*
+app/storage/thumbnails/*
+
+# Test images
+test1.png
+test2.png
+test3.png

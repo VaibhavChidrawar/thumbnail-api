@@ -1,0 +1,63 @@
+import uuid
+import os
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from redis import Redis
+from rq import Queue
+
+from app.config import ORIGINALS_DIR, REDIS_URL
+
+router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+redis_conn = Redis.from_url(REDIS_URL)
+queue = Queue("thumbnails", connection=redis_conn)
+
+os.makedirs(ORIGINALS_DIR, exist_ok=True)
+
+@router.post("/")
+def submit_job(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are supported")
+
+    job_id = str(uuid.uuid4())
+    original_path = f"{ORIGINALS_DIR}/{job_id}.png"
+
+    with open(original_path, "wb") as f:
+        f.write(file.file.read())
+
+    # enqueue job (worker implementation later)
+    job = queue.enqueue(
+        "app.workers.tasks.generate_thumbnail",
+        job_id,
+        original_path
+    )
+
+    redis_conn.hset(f"job:{job_id}", mapping={
+        "status": "queued",
+        "rq_job_id": job.id
+    })
+    redis_conn.sadd("jobs", job_id)
+
+    return {"job_id": job_id, "status": "queued"}
+
+
+@router.get("/{job_id}")
+def job_status(job_id: str):
+    job_key = f"job:{job_id}"
+    if not redis_conn.exists(job_key):
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    status = redis_conn.hget(job_key, "status").decode()
+    return {"job_id": job_id, "status": status}
+
+
+@router.get("/")
+def list_jobs():
+    jobs = redis_conn.smembers("jobs")
+    result = []
+
+    for job_id in jobs:
+        job_id = job_id.decode()
+        status = redis_conn.hget(f"job:{job_id}", "status").decode()
+        result.append({"job_id": job_id, "status": status})
+
+    return result
