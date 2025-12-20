@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from PIL import Image
 from redis import Redis
 
@@ -24,6 +25,9 @@ def generate_thumbnail(job_id: str, original_path: str):
     try:
         logger.info(f"Starting thumbnail generation for job {job_id}")
         redis_conn.hset(job_key, "status", "processing")
+
+        # Simulate long-running job
+        time.sleep(30)
 
         # Open image
         with Image.open(original_path) as img:
