@@ -19,8 +19,13 @@ def generate_thumbnail(job_id: str, original_path: str):
     thumbnail_path = f"{THUMBNAILS_DIR}/{job_id}.png"
 
     try:
-        logger.info(f"Starting thumbnail generation for job {job_id}")
-        redis_conn.hset(job_key, "status", "processing")
+        started_at = time.time()
+        redis_conn.hset(job_key, mapping={
+            "status": "processing",
+            "started_at": started_at
+        })
+
+        logger.info(f"Job started job_id={job_id} started_at={started_at}")
 
         # Simulate long-running job
         time.sleep(30)
@@ -30,13 +35,26 @@ def generate_thumbnail(job_id: str, original_path: str):
             img.thumbnail((100, 100))
             img.save(thumbnail_path, "PNG")
 
-        redis_conn.hset(job_key, "status", "succeeded")
-        logger.info(f"Thumbnail generated successfully for job {job_id}")
+        finished_at = time.time()
+        processing_time_ms = int((finished_at - started_at) * 1000)
+
+        redis_conn.hset(job_key, mapping={
+            "status": "succeeded",
+            "finished_at": finished_at,
+            "processing_time_ms": processing_time_ms
+        })
+
+        logger.info(f"Job succeeded job_id={job_id} processing_time_ms={processing_time_ms}")
 
         return thumbnail_path
 
     except Exception as e:
-        logger.exception(f"Failed to process job {job_id}")
-        redis_conn.hset(job_key, "status", "failed")
-        redis_conn.hset(job_key, "error", str(e))
+        finished_at = time.time()
+        redis_conn.hset(job_key, mapping={
+            "status": "failed",
+            "finished_at": finished_at,
+            "error": str(e)
+        })
+
+        logger.exception(f"Job failed job_id={job_id}")
         raise

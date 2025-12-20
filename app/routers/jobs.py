@@ -1,6 +1,7 @@
 import uuid
 import os
 import logging
+import time
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from redis import Redis
@@ -36,13 +37,16 @@ def submit_job(file: UploadFile = File(...)):
         original_path
     )
 
+    created_at = time.time()
+
     redis_conn.hset(f"job:{job_id}", mapping={
         "status": "queued",
-        "rq_job_id": job.id
+        "rq_job_id": job.id,
+        "created_at": created_at
     })
     redis_conn.sadd("jobs", job_id)
 
-    logger.info(f"Job submitted job_id={job_id} filename={file.filename} content_type={file.content_type}")
+    logger.info(f"Job submitted job_id={job_id} filename={file.filename} created_at={created_at}")
 
     return {"job_id": job_id, "status": "queued"}
 
