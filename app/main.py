@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from app.routers import jobs
+from app.logging_config import setup_logging
+
+setup_logging()
 
 app = FastAPI(
     title="Thumbnail API",

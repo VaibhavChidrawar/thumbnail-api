@@ -1,20 +1,16 @@
 import os
 import logging
 import time
+
 from PIL import Image
 from redis import Redis
+from app.logging_config import setup_logging
+from app.config import REDIS_URL, THUMBNAILS_DIR
 
-from app.config import (
-    REDIS_URL,
-    THUMBNAILS_DIR,
-)
-
-# basic logging (stdout -> kubectl logs later)
-logging.basicConfig(level=logging.INFO)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 redis_conn = Redis.from_url(REDIS_URL)
-
 os.makedirs(THUMBNAILS_DIR, exist_ok=True)
 
 

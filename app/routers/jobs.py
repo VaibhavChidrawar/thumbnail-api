@@ -1,12 +1,15 @@
 import uuid
 import os
+import logging
+
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from redis import Redis
 from rq import Queue
 from fastapi.responses import FileResponse
 from app.config import THUMBNAILS_DIR
-
 from app.config import ORIGINALS_DIR, REDIS_URL
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -39,6 +42,8 @@ def submit_job(file: UploadFile = File(...)):
     })
     redis_conn.sadd("jobs", job_id)
 
+    logger.info(f"Job submitted job_id={job_id} filename={file.filename} content_type={file.content_type}")
+
     return {"job_id": job_id, "status": "queued"}
 
 
@@ -49,6 +54,8 @@ def job_status(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
 
     status = redis_conn.hget(job_key, "status").decode()
+    logger.info(f"Job status requested job_id={job_id} status={status}")
+
     return {"job_id": job_id, "status": status}
 
 
@@ -83,8 +90,21 @@ def get_thumbnail(job_id: str):
     if not os.path.exists(thumbnail_path):
         raise HTTPException(status_code=500, detail="Thumbnail file missing")
 
+    logger.info(f"Thumbnail requested job_id={job_id}")
+
     return FileResponse(
         thumbnail_path,
         media_type="image/png",
         filename=f"{job_id}.png"
     )
+
+
+@router.get("/{job_id}/debug")
+def debug_job(job_id: str):
+    job_key = f"job:{job_id}"
+
+    if not redis_conn.exists(job_key):
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    data = redis_conn.hgetall(job_key)
+    return {k.decode(): v.decode() for k, v in data.items()}
