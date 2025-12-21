@@ -7,16 +7,12 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from redis import Redis
 from rq import Queue
 from fastapi.responses import FileResponse
-from app.config import THUMBNAILS_DIR
-from app.config import ORIGINALS_DIR, REDIS_URL
+from app.config import THUMBNAILS_DIR, ORIGINALS_DIR
+from app.redis_conn import redis_conn
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-
-redis_conn = Redis.from_url(REDIS_URL)
-queue = Queue("thumbnails", connection=redis_conn)
-
+queue = Queue(connection=redis_conn)
 os.makedirs(ORIGINALS_DIR, exist_ok=True)
 
 @router.post("/")

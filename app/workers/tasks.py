@@ -6,6 +6,7 @@ from PIL import Image
 from redis import Redis
 from app.logging_config import setup_logging
 from app.config import REDIS_URL, THUMBNAILS_DIR
+from app.redis_conn import redis_conn
 
 setup_logging()
 logger = logging.getLogger(__name__)

@@ -17,7 +17,13 @@ venv/
 app/storage/originals/*
 app/storage/thumbnails/*
 
+# Runtime generated files
+storage/
+storage/originals/
+storage/thumbnails
+
 # Test images
 test1.png
 test2.png
 test3.png
+thumbnail.png
