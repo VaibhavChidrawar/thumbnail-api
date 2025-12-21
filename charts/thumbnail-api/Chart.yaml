@@ -1,0 +1,6 @@
+apiVersion: v2
+name: thumbnail-api
+description: Long-running thumbnail processing system.
+type: application
+version: 0.1.0
+appVersion: "1.0"

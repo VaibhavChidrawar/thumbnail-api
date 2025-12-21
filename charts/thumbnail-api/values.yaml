@@ -1,0 +1,26 @@
+image:
+  api:
+    repository: thumbnail-api
+    tag: v1.1
+  worker:
+    repository: thumbnail-worker
+    tag: v1.1
+  redis:
+    repository: redis
+    tag: "7"
+
+replicaCount:
+  api: 1
+  worker: 1
+
+service:
+  api:
+    type: ClusterIP
+    port: 8000
+
+storage:
+  size: 1Gi
+  mountPath: /data
+
+redis:
+  storageSize: 1Gi

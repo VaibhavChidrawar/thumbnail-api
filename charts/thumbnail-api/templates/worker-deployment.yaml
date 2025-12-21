@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thumbnail-worker
+spec:
+  replicas: {{ .Values.replicaCount.worker }}
+  selector:
+    matchLabels:
+      app: thumbnail-worker
+  template:
+    metadata:
+      labels:
+        app: thumbnail-worker
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.image.worker.repository }}:{{ .Values.image.worker.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_HOST
+              value: redis
+            - name: STORAGE_PATH
+              value: {{ .Values.storage.mountPath }}
+          volumeMounts:
+            - name: storage
+              mountPath: {{ .Values.storage.mountPath }}
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: thumbnail-storage

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thumbnail-api
+spec:
+  replicas: {{ .Values.replicaCount.api }}
+  selector:
+    matchLabels:
+      app: thumbnail-api
+  template:
+    metadata:
+      labels:
+        app: thumbnail-api
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.api.repository }}:{{ .Values.image.api.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: REDIS_HOST
+              value: redis
+            - name: STORAGE_PATH
+              value: {{ .Values.storage.mountPath }}
+          volumeMounts:
+            - name: storage
+              mountPath: {{ .Values.storage.mountPath }}
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: thumbnail-storage
